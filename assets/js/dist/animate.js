@@ -146,7 +146,7 @@
      * @return {NodeElement}     Found parent element
      */
     Animate.prototype._findAncestor = function(el, cls) {
-        if (cls.charAt(0) === ".") {
+        if (cls.charAt(0) === '.') {
             cls = cls.substring(1);
         }
         while ((el = el.parentElement) && !el.classList.contains(cls));
@@ -197,13 +197,13 @@
         // Dimensions
         var dimensions = el.getBoundingClientRect();
         var container = this.container;
-        var containerHeight;
-        var containerWidth;
-        var relativeDimensions;
+        var containerHeight = (window.innerHeight || document.documentElement.clientHeight);
+        var containerWidth = (window.innerWidth || document.documentElement.clientWidth);
+        var relativeDimensions = dimensions;
 
-        if(container !== window) {
-            containerHeight = container.scrollHeight;
-            containerWidth = container.scrollWidth;
+        if (container !== window) {
+            containerHeight = container.clientHeight;
+            containerWidth = container.clientWidth;
 
             relativeDimensions = {
                 top: el.offsetTop - container.scrollTop,
@@ -213,11 +213,6 @@
                 height: dimensions.height,
                 width: dimensions.width,
             };
-
-        } else {
-            containerHeight = (window.innerHeight || document.documentElement.clientHeight);
-            containerWidth = (window.innerWidth || document.documentElement.clientWidth);
-            relativeDimensions = dimensions;
         }
 
         // Offset
@@ -234,6 +229,8 @@
         var isInViewFromLeft = (relativeDimensions.right - (relativeDimensions.width * horizontalOffset)) > 0;
         var isInViewFromRight = (relativeDimensions.left + (relativeDimensions.width * horizontalOffset)) < containerWidth;
         var isInViewHorizontally = isInViewFromLeft && isInViewFromRight;
+
+        console.log(isInViewFromLeft, isInViewFromRight);
 
         return (isInViewVertically && isInViewHorizontally);
     };
