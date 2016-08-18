@@ -3,16 +3,16 @@
  * Purpose: Placeholder content
  */
 
-.box { 
-    height: 500px; 
-    width: 100%; 
+.box {
+    height: 500px;
+    width: 100%;
     margin-top: $guttering*4;
     background-color: white;
     @include respond-max($bp-sm) {
-        height: 250px; 
+        height: 250px;
         margin-top: $guttering*2;
     }
-}   
+}
 
 .box--nudge-top { margin-top: $guttering*2; }
 .box--nudge-bottom { margin-bottom: $guttering*2; }

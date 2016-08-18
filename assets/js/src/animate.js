@@ -12,10 +12,11 @@
     var Animate = function(userOptions) {
         var el = document.createElement('fakeelement');
         var defaultOptions = {
+            target: '[data-animate]',
+            container: window,
             animatedClass: 'js-animated',
             offset: [0.5, 0.5],
             delay: 0,
-            target: '[data-animate]',
             remove: true,
             scrolled: false,
             reverse: false,
@@ -37,6 +38,7 @@
 
         this.verticalOffset = this.options.offset;
         this.horizontalOffset = this.options.offset;
+        this.container = this.options.container !== window ? document.querySelector(this.options.container) : window;
 
         // Offset can be [y, x] or the same value can be used for both
         if (this._isType('Array', this.options.offset)) {
@@ -137,6 +139,20 @@
     };
 
     /**
+     * Find ancestor in DOM tree
+     * @param  {NodeElement} el  Element to start search from
+     * @param  {[type]} cls Class of parent
+     * @return {NodeElement}     Found parent element
+     */
+    Animate.prototype._findAncestor = function(el, cls) {
+        if (cls.charAt(0) === ".") {
+            cls = cls.substring(1);
+        }
+        while ((el = el.parentElement) && !el.classList.contains(cls));
+        return el;
+    };
+
+    /**
      * Determines whether we have already scrolled past the element
      * @param  {HTMLElement}  el Element to test
      * @return {Boolean}
@@ -179,8 +195,29 @@
     Animate.prototype._isInView = function(el) {
         // Dimensions
         var dimensions = el.getBoundingClientRect();
-        var viewportHeight = (window.innerHeight || document.documentElement.clientHeight);
-        var viewportWidth = (window.innerWidth || document.documentElement.clientWidth);
+        var container = this.container;
+        var containerHeight;
+        var containerWidth;
+        var relativeDimensions;
+
+        if(container !== window) {
+            containerHeight = container.scrollHeight;
+            containerWidth = container.scrollWidth;
+
+            relativeDimensions = {
+                top: el.offsetTop - container.scrollTop,
+                right: (el.offsetLeft + dimensions.width) - container.scrollLeft,
+                bottom: (el.offsetTop + dimensions.height) - container.scrollTop,
+                left: el.offsetLeft - container.scrollLeft,
+                height: dimensions.height,
+                width: dimensions.width,
+            };
+
+        } else {
+            containerHeight = (window.innerHeight || document.documentElement.clientHeight);
+            containerWidth = (window.innerWidth || document.documentElement.clientWidth);
+            relativeDimensions = dimensions;
+        }
 
         // Offset
         var elementOffset = this._getElementOffset(el);
@@ -188,16 +225,28 @@
         var horizontalOffset = elementOffset[1];
 
         // Vertical
-        var isInViewFromTop = (dimensions.bottom - (dimensions.height * verticalOffset)) > 0;
-        var isInViewFromBottom = (dimensions.top + (dimensions.height * verticalOffset)) < viewportHeight;
+        var isInViewFromTop = (relativeDimensions.bottom - (relativeDimensions.height * verticalOffset)) > 0;
+        var isInViewFromBottom = (relativeDimensions.top + (relativeDimensions.height * verticalOffset)) < containerHeight;
         var isInViewVertically = isInViewFromTop && isInViewFromBottom;
 
         // Horizontal
-        var isInViewFromLeft = (dimensions.right - (dimensions.width * horizontalOffset)) > 0;
-        var isInViewFromRight = (dimensions.left + (dimensions.width * horizontalOffset)) < viewportWidth;
+        var isInViewFromLeft = (relativeDimensions.right - (relativeDimensions.width * horizontalOffset)) > 0;
+        var isInViewFromRight = (relativeDimensions.left + (relativeDimensions.width * horizontalOffset)) < containerWidth;
         var isInViewHorizontally = isInViewFromLeft && isInViewFromRight;
 
         return (isInViewVertically && isInViewHorizontally);
+    };
+
+    /**
+     * Test whether an object is of a give type
+     * @private
+     * @param  {String}  type Type to test for e.g. 'String', 'Array'
+     * @param  {Object}  obj  Object to test type against
+     * @return {Boolean}      Whether object is of a type
+     */
+    Animate.prototype._isType = function(type, obj) {
+        var test = Object.prototype.toString.call(obj).slice(8, -1);
+        return obj !== null && obj !== undefined && test === type;
     };
 
     /**
@@ -220,18 +269,6 @@
     Animate.prototype._hasAnimated = function(el) {
         var animated = el.getAttribute('data-animated');
         return animated === 'true';
-    };
-
-    /**
-     * Test whether an object is of a give type
-     * @private
-     * @param  {String}  type Type to test for e.g. 'String', 'Array'
-     * @param  {Object}  obj  Object to test type against
-     * @return {Boolean}      Whether object is of a type
-     */
-    Animate.prototype._isType = function(type, obj) {
-        var test = Object.prototype.toString.call(obj).slice(8, -1);
-        return obj !== null && obj !== undefined && test === type;
     };
 
     /**
@@ -345,7 +382,7 @@
         }
 
         if (this.options.onScroll) {
-            window.removeEventListener('scroll', this.throttledEvent, false);
+            this.container.addEventListener('scroll', this.throttledEvent, false);
         }
     };
 
@@ -365,7 +402,7 @@
         }
 
         if (this.options.onScroll) {
-            window.addEventListener('scroll', this.throttledEvent, false);
+            this.container.addEventListener('scroll', this.throttledEvent, false);
         }
     };
 
